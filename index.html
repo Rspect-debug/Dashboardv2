@@ -14,6 +14,10 @@
 <meta name="apple-mobile-web-app-title" content="Dashboard">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="mobile-web-app-capable" content="yes">
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <style>
 /* ════════════════════════════════════════════════
    VARIABLES — Edit karne ke liye yahi change karo
@@ -826,6 +830,154 @@ select option { background: var(--bg2); }
   0%, 100% { opacity: 1; transform: scale(1); }
   50%       { opacity: 0.5; transform: scale(0.85); }
 }
+
+/* ════════════════════════════════════════════════
+   FIREBASE SETUP + AUTH SCREENS
+   ════════════════════════════════════════════════ */
+
+/* Full screen overlay for auth */
+.auth-screen {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.auth-screen.hidden { display: none; }
+
+.auth-box {
+  width: 100%;
+  max-width: 420px;
+  animation: fadeUp 0.4s cubic-bezier(0.4,0,0.2,1);
+}
+.auth-logo {
+  width: 64px; height: 64px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 20px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-head);
+  font-weight: 800; font-size: 28px;
+  color: #fff;
+  margin: 0 auto 24px;
+  box-shadow: 0 8px 32px rgba(124,92,252,0.35);
+}
+.auth-title {
+  font-family: var(--font-head);
+  font-size: 28px; font-weight: 800;
+  text-align: center;
+  background: linear-gradient(135deg, var(--text), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 6px;
+}
+.auth-sub {
+  text-align: center;
+  font-size: 14px; color: var(--text3);
+  margin-bottom: 32px;
+}
+.auth-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+}
+.auth-tabs {
+  display: flex;
+  background: var(--bg3);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  margin-bottom: 24px;
+  gap: 4px;
+}
+.auth-tab {
+  flex: 1; text-align: center;
+  padding: 9px;
+  border-radius: 6px;
+  font-size: 14px; font-weight: 600;
+  cursor: pointer;
+  color: var(--text2);
+  transition: all 0.2s;
+}
+.auth-tab.active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(124,92,252,0.3);
+}
+.auth-error {
+  background: rgba(252,92,92,0.1);
+  border: 1px solid rgba(252,92,92,0.25);
+  color: var(--red);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  margin-bottom: 16px;
+  display: none;
+}
+.auth-error.show { display: block; }
+
+/* Firebase Setup Screen */
+.setup-step {
+  display: flex; gap: 14px;
+  padding: 14px;
+  background: var(--bg3);
+  border-radius: var(--radius-sm);
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+}
+.setup-num {
+  width: 28px; height: 28px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: #fff;
+  flex-shrink: 0;
+}
+.setup-text { font-size: 13px; color: var(--text2); line-height: 1.7; }
+.setup-text b { color: var(--text); }
+
+/* User avatar in topbar */
+.user-avatar {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 700; color: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+}
+.user-menu {
+  position: absolute;
+  top: 44px; right: 0;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px;
+  min-width: 180px;
+  z-index: 200;
+  box-shadow: var(--shadow);
+  display: none;
+}
+.user-menu.open { display: block; animation: fadeUp 0.2s ease; }
+.user-menu-item {
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 13px; cursor: pointer;
+  color: var(--text2);
+  transition: all 0.15s;
+  display: flex; align-items: center; gap: 8px;
+}
+.user-menu-item:hover { background: var(--card); color: var(--text); }
+.user-email {
+  padding: 10px 14px 6px;
+  font-size: 11px; color: var(--text3);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 6px;
+  word-break: break-all;
+}
+
 </style>
 </head>
 <body>
@@ -833,7 +985,110 @@ select option { background: var(--bg2); }
 <!-- ══════════════════════════════════════════
      SIDEBAR
      ══════════════════════════════════════════ -->
-<div class="app">
+<!-- ══════════════════════════════════════════
+     FIREBASE SETUP SCREEN (first time only)
+     ══════════════════════════════════════════ -->
+<div class="auth-screen" id="setup-screen">
+  <div class="auth-box">
+    <div class="auth-logo">⚡</div>
+    <div class="auth-title">Firebase Setup</div>
+    <div class="auth-sub">Ek baar karo — hamesha ke liye sync</div>
+    <div class="auth-card">
+      <div style="margin-bottom:20px">
+        <div class="setup-step"><div class="setup-num">1</div><div class="setup-text"><b>console.firebase.google.com</b> kholo → New Project banao</div></div>
+        <div class="setup-step"><div class="setup-num">2</div><div class="setup-text"><b>Authentication</b> → Email/Password enable karo</div></div>
+        <div class="setup-step"><div class="setup-num">3</div><div class="setup-text"><b>Firestore Database</b> → Create → <b>asia-south1</b> select karo</div></div>
+        <div class="setup-step"><div class="setup-num">4</div><div class="setup-text">Project Settings (⚙️) → <b>Add App</b> → Web → Config copy karo</div></div>
+      </div>
+      <div class="auth-error" id="setup-error"></div>
+      <div class="form-group">
+        <label>apiKey</label>
+        <input type="text" id="fb-apiKey" placeholder="AIzaSy...">
+      </div>
+      <div class="form-group">
+        <label>authDomain</label>
+        <input type="text" id="fb-authDomain" placeholder="yourapp.firebaseapp.com">
+      </div>
+      <div class="form-group">
+        <label>projectId</label>
+        <input type="text" id="fb-projectId" placeholder="yourapp-12345">
+      </div>
+      <div class="form-group">
+        <label>storageBucket (optional)</label>
+        <input type="text" id="fb-storageBucket" placeholder="yourapp.appspot.com">
+      </div>
+      <div class="form-group">
+        <label>messagingSenderId (optional)</label>
+        <input type="text" id="fb-messagingSenderId" placeholder="123456789">
+      </div>
+      <div class="form-group">
+        <label>appId</label>
+        <input type="text" id="fb-appId" placeholder="1:123:web:abc...">
+      </div>
+      <button class="btn btn-primary" style="width:100%" onclick="saveFirebaseConfig()">🔌 Connect Firebase</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     LOGIN / REGISTER SCREEN
+     ══════════════════════════════════════════ -->
+<div class="auth-screen hidden" id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">⚡</div>
+    <div class="auth-title">My Dashboard</div>
+    <div class="auth-sub">Apna account se login karo</div>
+    <div class="auth-card">
+      <div class="auth-tabs">
+        <div class="auth-tab active" onclick="switchAuthTab('login', this)">Login</div>
+        <div class="auth-tab" onclick="switchAuthTab('register', this)">Account Banao</div>
+      </div>
+      <div class="auth-error" id="auth-error"></div>
+
+      <!-- Login Form -->
+      <div id="login-form">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="login-email" placeholder="email@example.com">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <button class="btn btn-primary" style="width:100%" onclick="doLogin()" id="login-btn">
+          🔐 Login Karo
+        </button>
+        <div style="text-align:center;margin-top:14px">
+          <span style="font-size:13px;color:var(--text3);cursor:pointer" onclick="doForgotPassword()">Password bhool gaye? Reset karo</span>
+        </div>
+      </div>
+
+      <!-- Register Form -->
+      <div id="register-form" style="display:none">
+        <div class="form-group">
+          <label>Naam</label>
+          <input type="text" id="reg-name" placeholder="Apna naam">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="reg-email" placeholder="email@example.com">
+        </div>
+        <div class="form-group">
+          <label>Password (6+ characters)</label>
+          <input type="password" id="reg-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doRegister()">
+        </div>
+        <button class="btn btn-primary" style="width:100%" onclick="doRegister()" id="reg-btn">
+          ✨ Account Banao
+        </button>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:16px">
+      <span style="font-size:12px;color:var(--text3);cursor:pointer" onclick="resetFirebaseConfig()">⚙️ Firebase Config change karo</span>
+    </div>
+  </div>
+</div>
+
+<div class="app" style="display:none">
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo" onclick="toggleSidebar()">M</div>
   <nav class="nav-items">
@@ -889,6 +1144,14 @@ select option { background: var(--bg2); }
           <input type="text" placeholder="Search...">
         </div>
         <button class="btn btn-primary btn-sm" onclick="showPage('upload')">+ Upload</button>
+        <div class="user-avatar" id="user-avatar" onclick="toggleUserMenu()">
+          <span id="user-initial">?</span>
+          <div class="user-menu" id="user-menu">
+            <div class="user-email" id="user-email-display">loading...</div>
+            <div class="user-menu-item" onclick="showPage('settings')">⚙️ Settings</div>
+            <div class="user-menu-item" onclick="doLogout()" style="color:var(--red)">🚪 Logout</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1493,27 +1756,120 @@ select option { background: var(--bg2); }
      ══════════════════════════════════════════ -->
 <script>
 // ═══════════════════════════════════════════
-// DATA STORE — sab localStorage mein save hota hai
+// FIREBASE — Init + Auth + Firestore
 // ═══════════════════════════════════════════
-const DB = {
-  get(key, def=null) {
-    try { const v = localStorage.getItem('dash_'+key); return v ? JSON.parse(v) : def; } catch { return def; }
-  },
-  set(key, val) {
-    try { localStorage.setItem('dash_'+key, JSON.stringify(val)); } catch(e) { console.error(e); }
-  }
-};
 
-let notes        = DB.get('notes', []);
-let tasks        = DB.get('tasks', []);
-let schedules    = DB.get('schedules', []);
-let transactions = DB.get('transactions', []);
-let settings     = DB.get('settings', {
+let db = null, auth = null, currentUser = null;
+let unsubscribers = []; // real-time listeners cleanup
+
+// Local cache (for offline + fast UI)
+let notes        = [];
+let tasks        = [];
+let schedules    = [];
+let transactions = [];
+let settings     = {
   name: '', tgToken: '', tgChannel: '',
   visitors: 2, videos: 0, earnings: 0, tgsubs: 0,
   siteUrl: '', debt: 100000, debtPaid: 0,
   rapido: 0, siteIncome: 0, otherIncome: 0
-});
+};
+
+// ── Firebase Config Storage (localStorage, not Firestore) ──
+const LocalConfig = {
+  get() { try { return JSON.parse(localStorage.getItem('fb_config') || 'null'); } catch { return null; } },
+  set(cfg) { localStorage.setItem('fb_config', JSON.stringify(cfg)); },
+  clear() { localStorage.removeItem('fb_config'); }
+};
+
+// ── Init Firebase ──
+function initFirebase(config) {
+  try {
+    if (firebase.apps.length) firebase.apps.forEach(a => a.delete());
+    firebase.initializeApp(config);
+    db   = firebase.firestore();
+    auth = firebase.auth();
+    // Enable offline persistence
+    db.enablePersistence({ synchronizeTabs: true }).catch(e => console.log('Persistence:', e.code));
+    return true;
+  } catch(e) {
+    console.error('Firebase init error:', e);
+    return false;
+  }
+}
+
+// ── User collection path ──
+function userCol(col) {
+  return db.collection('users').doc(currentUser.uid).collection(col);
+}
+function userDoc() {
+  return db.collection('users').doc(currentUser.uid);
+}
+
+// ── DB wrapper — Firestore ──
+const DB = {
+  // Save full array to Firestore (batch write)
+  async setArray(col, arr) {
+    try {
+      const batch = db.batch();
+      // Delete all existing docs in collection
+      const existing = await userCol(col).get();
+      existing.forEach(d => batch.delete(d.ref));
+      // Add new docs
+      arr.forEach(item => {
+        const ref = userCol(col).doc(String(item.id));
+        batch.set(ref, item);
+      });
+      await batch.commit();
+    } catch(e) { console.error('DB.setArray error:', e); }
+  },
+
+  // Save single doc (for settings)
+  async setDoc(docId, data) {
+    try { await userDoc().collection('meta').doc(docId).set(data); } 
+    catch(e) { console.error('DB.setDoc error:', e); }
+  },
+
+  // Get single doc
+  async getDoc(docId, def) {
+    try {
+      const snap = await userDoc().collection('meta').doc(docId).get();
+      return snap.exists ? snap.data() : def;
+    } catch(e) { return def; }
+  }
+};
+
+// ── Real-time listeners ──
+function startListeners() {
+  // Cleanup old listeners
+  unsubscribers.forEach(u => u());
+  unsubscribers = [];
+
+  const collections = [
+    { col: 'notes',        setter: arr => { notes = arr; renderNotes(); updateBadges(); renderDashboard(); } },
+    { col: 'tasks',        setter: arr => { tasks = arr; renderTasks(); updateBadges(); renderDashboard(); } },
+    { col: 'schedules',    setter: arr => { schedules = arr; renderSchedule(); } },
+    { col: 'transactions', setter: arr => { transactions = arr; renderFinance(); } },
+  ];
+
+  collections.forEach(({ col, setter }) => {
+    const unsub = userCol(col).onSnapshot(snap => {
+      const arr = snap.docs.map(d => d.data());
+      setter(arr);
+    }, err => console.log(col + ' listener error:', err));
+    unsubscribers.push(unsub);
+  });
+
+  // Settings listener
+  const unsubSettings = userDoc().collection('meta').doc('settings').onSnapshot(snap => {
+    if (snap.exists) {
+      settings = { ...settings, ...snap.data() };
+      renderDashboard();
+      loadSettings();
+      renderFinance();
+    }
+  });
+  unsubscribers.push(unsubSettings);
+}
 
 let currentNoteId = null;
 let selectedChips = new Set(['telegram']);
@@ -1521,16 +1877,210 @@ let selectedChips = new Set(['telegram']);
 // ═══════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════
+// ═══════════════════════════════════════════
+// APP STARTUP — Firebase auth flow
+// ═══════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
+  const config = LocalConfig.get();
+  
+  if (!config) {
+    // First time: show setup screen
+    showScreen('setup');
+    return;
+  }
+  
+  if (!initFirebase(config)) {
+    showScreen('setup');
+    showSetupError('Firebase config galat hai. Dobara daalo.');
+    return;
+  }
+
+  // Listen for auth state
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      currentUser = user;
+      showScreen('app');
+      onUserLoggedIn();
+    } else {
+      currentUser = null;
+      showScreen('auth');
+    }
+  });
+});
+
+function showScreen(screen) {
+  document.getElementById('setup-screen').classList.toggle('hidden', screen !== 'setup');
+  document.getElementById('auth-screen').classList.toggle('hidden', screen !== 'auth');
+  document.querySelector('.app').style.display = screen === 'app' ? 'flex' : 'none';
+}
+
+function onUserLoggedIn() {
+  // Update UI
+  const email = currentUser.email || '';
+  const initial = (currentUser.displayName || email || 'U')[0].toUpperCase();
+  document.getElementById('user-initial').textContent = initial;
+  document.getElementById('user-email-display').textContent = email;
+  
+  // Start real-time listeners
+  startListeners();
+  
+  // Init UI
   initGreeting();
-  renderDashboard();
-  renderNotes();
-  renderTasks();
-  renderSchedule();
-  renderFinance();
-  loadSettings();
-  updateBadges();
   setInterval(initGreeting, 60000);
+}
+
+// ── Firebase Config Setup ──
+function saveFirebaseConfig() {
+  const config = {
+    apiKey:            document.getElementById('fb-apiKey').value.trim(),
+    authDomain:        document.getElementById('fb-authDomain').value.trim(),
+    projectId:         document.getElementById('fb-projectId').value.trim(),
+    storageBucket:     document.getElementById('fb-storageBucket').value.trim(),
+    messagingSenderId: document.getElementById('fb-messagingSenderId').value.trim(),
+    appId:             document.getElementById('fb-appId').value.trim(),
+  };
+  
+  if (!config.apiKey || !config.authDomain || !config.projectId) {
+    showSetupError('apiKey, authDomain, aur projectId zaroori hai!');
+    return;
+  }
+
+  if (!initFirebase(config)) {
+    showSetupError('Config galat lag rahi hai. Dobara check karo.');
+    return;
+  }
+
+  // Test connection
+  auth.signInAnonymously()
+    .then(() => auth.currentUser.delete())
+    .then(() => {
+      LocalConfig.set(config);
+      showScreen('auth');
+    })
+    .catch(e => {
+      if (e.code === 'auth/admin-restricted-operation' || e.code === 'auth/operation-not-allowed') {
+        // Anonymous disabled is fine — email auth is what we need
+        LocalConfig.set(config);
+        showScreen('auth');
+      } else if (e.code === 'auth/network-request-failed') {
+        showSetupError('Internet check karo.');
+      } else {
+        LocalConfig.set(config);
+        showScreen('auth');
+      }
+    });
+}
+
+function showSetupError(msg) {
+  const el = document.getElementById('setup-error');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+function resetFirebaseConfig() {
+  if (!confirm('Firebase config reset karna hai? Logout ho jaoge.')) return;
+  unsubscribers.forEach(u => u());
+  auth?.signOut();
+  LocalConfig.clear();
+  showScreen('setup');
+}
+
+// ── Auth Functions ──
+function switchAuthTab(tab, el) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('login-form').style.display    = tab === 'login'    ? 'block' : 'none';
+  document.getElementById('register-form').style.display = tab === 'register' ? 'block' : 'none';
+  document.getElementById('auth-error').classList.remove('show');
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  if (!email || !pass) { showAuthError('Email aur password dono chahiye!'); return; }
+  
+  const btn = document.getElementById('login-btn');
+  btn.textContent = '⏳ Login ho raha hai...'; btn.disabled = true;
+  
+  try {
+    await auth.signInWithEmailAndPassword(email, pass);
+    // onAuthStateChanged handle karega
+  } catch(e) {
+    const msgs = {
+      'auth/user-not-found':   'Yeh email registered nahi hai.',
+      'auth/wrong-password':   'Password galat hai.',
+      'auth/invalid-email':    'Email galat format mein hai.',
+      'auth/too-many-requests':'Bahut zyada tries. Thodi der baad karo.',
+      'auth/invalid-credential': 'Email ya password galat hai.',
+    };
+    showAuthError(msgs[e.code] || e.message);
+  } finally {
+    btn.textContent = '🔐 Login Karo'; btn.disabled = false;
+  }
+}
+
+async function doRegister() {
+  const name  = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pass  = document.getElementById('reg-pass').value;
+  if (!email || !pass) { showAuthError('Email aur password dono chahiye!'); return; }
+  if (pass.length < 6) { showAuthError('Password kam se kam 6 characters ka ho!'); return; }
+  
+  const btn = document.getElementById('reg-btn');
+  btn.textContent = '⏳ Account ban raha hai...'; btn.disabled = true;
+  
+  try {
+    const cred = await auth.createUserWithEmailAndPassword(email, pass);
+    if (name) await cred.user.updateProfile({ displayName: name });
+    // onAuthStateChanged handle karega
+  } catch(e) {
+    const msgs = {
+      'auth/email-already-in-use': 'Yeh email already registered hai. Login karo.',
+      'auth/weak-password':        'Password aur strong banao.',
+      'auth/invalid-email':        'Email galat format mein hai.',
+    };
+    showAuthError(msgs[e.code] || e.message);
+  } finally {
+    btn.textContent = '✨ Account Banao'; btn.disabled = false;
+  }
+}
+
+async function doForgotPassword() {
+  const email = document.getElementById('login-email').value.trim();
+  if (!email) { showAuthError('Pehle email daalo, phir reset karo.'); return; }
+  try {
+    await auth.sendPasswordResetEmail(email);
+    showAuthError('✅ Reset email bheja gaya! Inbox check karo.');
+    document.getElementById('auth-error').style.background = 'rgba(92,252,180,0.1)';
+    document.getElementById('auth-error').style.borderColor = 'rgba(92,252,180,0.25)';
+    document.getElementById('auth-error').style.color = 'var(--green)';
+  } catch(e) {
+    showAuthError('Email bhejne mein error: ' + e.message);
+  }
+}
+
+async function doLogout() {
+  unsubscribers.forEach(u => u());
+  await auth.signOut();
+  notes = []; tasks = []; schedules = []; transactions = [];
+  showScreen('auth');
+  closeUserMenu();
+}
+
+function toggleUserMenu() {
+  document.getElementById('user-menu').classList.toggle('open');
+}
+function closeUserMenu() {
+  document.getElementById('user-menu').classList.remove('open');
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.user-avatar')) closeUserMenu();
 });
 
 function initGreeting() {
@@ -1663,18 +2213,15 @@ function saveNote() {
   const cat   = document.getElementById('note-cat-input').value;
   const content = document.getElementById('note-content-input').innerHTML.trim();
   if (!title) { toast('Title likhna zaruri hai!', 'error'); return; }
-  if (currentNoteId) {
-    const idx = notes.findIndex(n => n.id == currentNoteId);
-    if (idx > -1) { notes[idx] = { ...notes[idx], title, category: cat, content }; }
-  } else {
-    notes.push({ id: Date.now(), title, category: cat, content });
-  }
-  DB.set('notes', notes);
-  closeModal('modal-note');
-  renderNotes();
-  updateBadges();
-  toast(currentNoteId ? 'Note update ho gaya!' : 'Note save ho gaya!', 'success');
-  currentNoteId = null;
+  const noteData = { id: currentNoteId || Date.now(), title, category: cat, content };
+  const ref = userCol('notes').doc(String(noteData.id));
+  ref.set(noteData)
+    .then(() => {
+      closeModal('modal-note');
+      toast(currentNoteId ? 'Note update ho gaya!' : 'Note save ho gaya!', 'success');
+      currentNoteId = null;
+    })
+    .catch(e => toast('Error: ' + e.message, 'error'));
 }
 
 function viewNote(id) {
@@ -1696,12 +2243,12 @@ function editCurrentNote() {
 
 function deleteNote(id) {
   if (!confirm('Note delete karna hai?')) return;
-  notes = notes.filter(n => n.id != id);
-  DB.set('notes', notes);
-  closeModal('modal-note-view');
-  renderNotes();
-  updateBadges();
-  toast('Note delete ho gaya', 'info');
+  userCol('notes').doc(String(id)).delete()
+    .then(() => {
+      closeModal('modal-note-view');
+      toast('Note delete ho gaya', 'info');
+    })
+    .catch(e => toast('Error: ' + e.message, 'error'));
 }
 
 // ═══════════════════════════════════════════
@@ -1731,27 +2278,27 @@ function saveTask() {
   const text = document.getElementById('task-text-input').value.trim();
   if (!text) { toast('Task likhna zaruri hai!', 'error'); return; }
   const priority = document.getElementById('task-priority-input').value;
-  tasks.push({ id: Date.now(), text, priority, done: false });
-  DB.set('tasks', tasks);
-  closeModal('modal-task');
-  document.getElementById('task-text-input').value = '';
-  renderTasks();
-  renderDashboard();
-  updateBadges();
-  toast('Task add ho gaya!', 'success');
+  const taskData = { id: Date.now(), text, priority, done: false };
+  userCol('tasks').doc(String(taskData.id)).set(taskData)
+    .then(() => {
+      closeModal('modal-task');
+      document.getElementById('task-text-input').value = '';
+      toast('Task add ho gaya!', 'success');
+    })
+    .catch(e => toast('Error: ' + e.message, 'error'));
 }
 
 function toggleTask(id) {
   const t = tasks.find(t => t.id == id);
-  if (t) { t.done = !t.done; DB.set('tasks', tasks); renderTasks(); renderDashboard(); updateBadges(); }
+  if (t) {
+    userCol('tasks').doc(String(t.id)).update({ done: !t.done })
+      .catch(e => console.error(e));
+  }
 }
 
 function deleteTask(e, id) {
   e.stopPropagation();
-  tasks = tasks.filter(t => t.id != id);
-  DB.set('tasks', tasks);
-  renderTasks();
-  updateBadges();
+  userCol('tasks').doc(String(id)).delete().catch(e => console.error(e));
 }
 
 function filterTasks(f, el) {
@@ -1761,10 +2308,10 @@ function filterTasks(f, el) {
 }
 
 function clearDoneTasks() {
-  tasks = tasks.filter(t => !t.done);
-  DB.set('tasks', tasks);
-  renderTasks();
-  toast('Done tasks clear ho gaye!', 'info');
+  const doneTasks = tasks.filter(t => t.done);
+  const batch = db.batch();
+  doneTasks.forEach(t => batch.delete(userCol('tasks').doc(String(t.id))));
+  batch.commit().then(() => toast('Done tasks clear ho gaye!', 'info'));
 }
 
 // ═══════════════════════════════════════════
@@ -1794,17 +2341,14 @@ function saveSchedule() {
   const time = document.getElementById('sch-time').value;
   const task = document.getElementById('sch-task').value.trim();
   if (!time || !task) { toast('Time aur task dono chahiye!', 'error'); return; }
-  schedules.push({ id: Date.now(), time, task });
-  DB.set('schedules', schedules);
-  closeModal('modal-schedule');
-  renderSchedule();
-  toast('Schedule add ho gaya!', 'success');
+  const schData = { id: Date.now(), time, task };
+  userCol('schedules').doc(String(schData.id)).set(schData)
+    .then(() => { closeModal('modal-schedule'); toast('Schedule add ho gaya!', 'success'); })
+    .catch(e => toast('Error: ' + e.message, 'error'));
 }
 
 function deleteSchedule(id) {
-  schedules = schedules.filter(s => s.id != id);
-  DB.set('schedules', schedules);
-  renderSchedule();
+  userCol('schedules').doc(String(id)).delete().catch(e => console.error(e));
 }
 
 // ═══════════════════════════════════════════
@@ -1854,21 +2398,19 @@ function saveTransaction() {
   const amount = parseFloat(document.getElementById('tx-amount').value);
   const desc   = document.getElementById('tx-desc').value.trim() || (type === 'income' ? 'Income' : 'Expense');
   if (!amount) { toast('Amount likhna zaruri hai!', 'error'); return; }
-  transactions.push({ id: Date.now(), type, amount, desc });
+  const txData = { id: Date.now(), type, amount, desc };
+  const saves = [userCol('transactions').doc(String(txData.id)).set(txData)];
   if (type === 'debt') {
     settings.debtPaid = (settings.debtPaid || 0) + amount;
-    DB.set('settings', settings);
+    saves.push(DB.setDoc('settings', settings));
   }
-  DB.set('transactions', transactions);
-  closeModal('modal-transaction');
-  renderFinance();
-  toast('Transaction add ho gaya!', 'success');
+  Promise.all(saves)
+    .then(() => { closeModal('modal-transaction'); toast('Transaction add ho gaya!', 'success'); })
+    .catch(e => toast('Error: ' + e.message, 'error'));
 }
 
 function deleteTx(id) {
-  transactions = transactions.filter(t => t.id != id);
-  DB.set('transactions', transactions);
-  renderFinance();
+  userCol('transactions').doc(String(id)).delete().catch(e => console.error(e));
 }
 
 function updateDebt() {
@@ -1876,16 +2418,17 @@ function updateDebt() {
   const paid  = prompt('Paid amount (₹):', settings.debtPaid || 0);
   if (total !== null) settings.debt = parseFloat(total) || 100000;
   if (paid  !== null) settings.debtPaid = parseFloat(paid) || 0;
-  DB.set('settings', settings);
-  renderFinance();
-  toast('Debt update ho gaya!', 'success');
+  DB.setDoc('settings', settings).then(() => {
+    renderFinance();
+    toast('Debt update ho gaya!', 'success');
+  });
 }
 
 function saveFinance() {
   settings.rapido     = parseFloat(document.getElementById('rapido-income')?.value) || 0;
   settings.siteIncome = parseFloat(document.getElementById('site-income')?.value)   || 0;
   settings.otherIncome= parseFloat(document.getElementById('other-income')?.value)  || 0;
-  DB.set('settings', settings);
+  DB.setDoc('settings', settings);
   renderFinance();
 }
 
@@ -1909,7 +2452,7 @@ function saveSettings() {
   settings.tgChannel= document.getElementById('s-tg-channel')?.value.trim() || settings.tgChannel;
   settings.name     = document.getElementById('s-name')?.value.trim() || settings.name;
   settings.siteUrl  = document.getElementById('s-site-url')?.value.trim() || settings.siteUrl;
-  DB.set('settings', settings);
+  DB.setDoc('settings', settings);
   updateTelegramStatus();
 }
 
@@ -1918,9 +2461,9 @@ function updateStats() {
   settings.videos   = parseInt(document.getElementById('s-videos').value)   || 0;
   settings.earnings = parseFloat(document.getElementById('s-earnings').value) || 0;
   settings.tgsubs   = parseInt(document.getElementById('s-tgsubs').value)   || 0;
-  DB.set('settings', settings);
-  renderDashboard();
-  toast('Stats update ho gaye!', 'success');
+  DB.setDoc('settings', settings).then(() => {
+    toast('Stats update ho gaye!', 'success');
+  });
 }
 
 function updateTelegramStatus() {
@@ -2117,14 +2660,11 @@ async function uploadToTelegram(item, fileId) {
 // DATA EXPORT / IMPORT
 // ═══════════════════════════════════════════
 function exportData() {
-  const data = {
-    notes, tasks, schedules, transactions, settings,
-    exportDate: new Date().toISOString()
-  };
+  const data = { notes, tasks, schedules, transactions, settings, exportDate: new Date().toISOString() };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'dashboard-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  const a = document.createElement('a'); a.href = url;
+  a.download = 'dashboard-backup-' + new Date().toISOString().slice(0,10) + '.json';
   a.click();
   toast('Backup download ho gaya!', 'success');
 }
@@ -2139,13 +2679,14 @@ function importData() {
     reader.onload = ev => {
       try {
         const data = JSON.parse(ev.target.result);
-        if (data.notes)        { notes = data.notes;               DB.set('notes', notes); }
-        if (data.tasks)        { tasks = data.tasks;               DB.set('tasks', tasks); }
-        if (data.schedules)    { schedules = data.schedules;       DB.set('schedules', schedules); }
-        if (data.transactions) { transactions = data.transactions; DB.set('transactions', transactions); }
-        if (data.settings)     { settings = data.settings;         DB.set('settings', settings); }
-        renderDashboard(); renderNotes(); renderTasks(); renderSchedule(); renderFinance(); loadSettings(); updateBadges();
-        toast('Data import ho gaya!', 'success');
+        const uploads = [];
+        if (data.notes)        { uploads.push(DB.setArray('notes', data.notes)); }
+        if (data.tasks)        { uploads.push(DB.setArray('tasks', data.tasks)); }
+        if (data.schedules)    { uploads.push(DB.setArray('schedules', data.schedules)); }
+        if (data.transactions) { uploads.push(DB.setArray('transactions', data.transactions)); }
+        if (data.settings)     { uploads.push(DB.setDoc('settings', data.settings)); }
+        toast('Import ho raha hai...', 'info');
+        Promise.all(uploads).then(() => toast('Data import ho gaya! ✅', 'success'));
       } catch(e) { toast('File galat hai!', 'error'); }
     };
     reader.readAsText(file);
@@ -2155,10 +2696,16 @@ function importData() {
 
 function clearAllData() {
   if (!confirm('Sab data delete karna hai? Yeh wapas nahi aayega!')) return;
-  notes = []; tasks = []; schedules = []; transactions = [];
-  DB.set('notes', []); DB.set('tasks', []); DB.set('schedules', []); DB.set('transactions', []);
-  renderDashboard(); renderNotes(); renderTasks(); renderSchedule(); renderFinance(); updateBadges();
-  toast('Sab data delete ho gaya', 'info');
+  const batch = db.batch();
+  ['notes','tasks','schedules','transactions'].forEach(async col => {
+    const snap = await userCol(col).get();
+    snap.forEach(d => batch.delete(d.ref));
+  });
+  setTimeout(() => {
+    batch.commit().then(() => {
+      toast('Sab data delete ho gaya', 'info');
+    });
+  }, 300);
 }
 
 // ═══════════════════════════════════════════
